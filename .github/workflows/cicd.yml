@@ -30,6 +30,8 @@ jobs:
           sed -i "s|<password>.*</password>|<password>${{ github.token }}</password>|" ~/.m2/settings.xml
 
       - name: Build with Maven
+        env:
+          MODEL_URL: https://example.com/api
         run: mvn --batch-mode verify
 
       - name: Archive JUnit test results
