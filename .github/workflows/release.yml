@@ -17,6 +17,13 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Copy Maven settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cp .github/maven/settings.xml ~/.m2/settings.xml
+          sed -i "s|<username>.*</username>|<username>${{github.actor}}</username>|" ~/.m2/settings.xml
+          sed -i "s|<password>.*</password>|<password>${{ github.token }}</password>|" ~/.m2/settings.xml
+
       # --- Step 1: Build ---
       - name: Build JAR
         run: ./mvnw clean package -DskipTests
