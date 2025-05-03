@@ -33,4 +33,4 @@ build/
 .gitignore
 .gitattributes
 Dockerfile
-README
+README.md
