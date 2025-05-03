@@ -46,4 +46,3 @@ A simple Spring Boot MVC application that analyzes user-submitted reviews for se
     ```bash
     mvn clean package
     ```
-
