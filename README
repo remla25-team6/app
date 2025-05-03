@@ -1,7 +1,5 @@
 # Sentiment Analysis Spring MVC
 
-![https://github.com/remla25-team6/app/actions/workflows/cicd.yml](https://github.com/github/docs/actions/workflows/main.yml/badge.svg)
-
 A simple Spring Boot MVC application that analyzes user-submitted reviews for sentiment (positive/negative), persists results, and allows users to provide feedback for retraining.
 
 ## Getting Started
