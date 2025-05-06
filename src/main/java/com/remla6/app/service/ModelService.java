@@ -5,7 +5,6 @@ import com.remla6.app.dto.PredictResponse;
 import com.remla6.app.exception.InferenceFailedException;
 import com.remla6.app.model.SentimentModel;
 import com.remla6.app.repository.SentimentRepository;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,6 +26,13 @@ public class ModelService {
         this.sentimentRepository = sentimentRepository;
     }
 
+    /**
+     * Method invoced by the ModelController if a user submits a review to be analysed.
+     *
+     * @param text a String representing the review submitted by the user
+     * @return SentimentModel containing the persisted result of the inference.
+     * @throws InferenceFailedException if model-service inference fails. Caught & handled by Spring
+     */
     public SentimentModel processSentiment(String text) throws InferenceFailedException {
         PredictRequest request = new PredictRequest(text);
 
@@ -53,6 +59,10 @@ public class ModelService {
         return sentimentRepository.save(model);
     }
 
+    /**
+     * Method to retrieve all inference results from the persistence repository.
+     * @return List of SentinentModel
+     */
     public List<SentimentModel> getAllPreviousResults(){
         return sentimentRepository.findAll();
     }

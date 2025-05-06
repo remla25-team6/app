@@ -20,16 +20,29 @@ import java.util.List;
 public class ModelController {
     private final ModelService modelService;
 
+    /**
+     * REST endpoint serving GET /
+     *
+     * @param model Spring MVC Model
+     * @return Thymleaf page
+     */
     @GetMapping
     public String index(Model model) {
         model.addAttribute("version", VersionUtil.getVersion());
         return "index";
     }
 
+    /**
+     * Rest endpoint serving POST /
+     * @param review RequestParameter representing user-submitted review.
+     * @param model Spring MVC Model
+     * @return Thymleaf page
+     * @throws InferenceFailedException if model-service inference fails. Caught & handled by Spring
+     */
     @PostMapping
     public String postReview(@RequestParam("review") String review, Model model) throws InferenceFailedException {
         // Process and persist inference
-        var res = modelService.processSentiment(review);
+        modelService.processSentiment(review);
 
         // Retrieve all previous inferences.
         List<SentimentModel> responses = modelService.getAllPreviousResults();
