@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    tags-ignore:
+      - '*'
+  pull_request:
+    branches:
+      - main
+    tags-ignore:
+      - '*'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Copy Maven settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cp .github/maven/settings.xml ~/.m2/settings.xml
+          sed -i "s|<username>.*</username>|<username>${{github.actor}}</username>|" ~/.m2/settings.xml
+          sed -i "s|<password>.*</password>|<password>${{ github.token }}</password>|" ~/.m2/settings.xml
+
+      - name: Build with Maven
+        env:
+          MODEL_URL: https://example.com/api
+        run: mvn --batch-mode verify
+
+      - name: Archive JUnit test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-results
+          path: target/surefire-reports/*.xml

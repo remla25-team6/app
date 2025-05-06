@@ -2,7 +2,10 @@ name: Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+      branches:
+        - main
+      tags-ignore:
+        - '*'
 
 jobs:
   build-test-publish:
@@ -10,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -41,14 +46,38 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Parse version info from tag
+      - name: Get latest tag
         run: |
-          VERSION=${GITHUB_REF:11}
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_ENV
+
+
+      - name: Calculate pre-release version
+        run: |
+          VERSION=${latest_tag#v}
           MAJOR=$(echo "$VERSION" | cut -d . -f 1)
           MINOR=$(echo "$VERSION" | cut -d . -f 2)
-          echo "version=$VERSION" >> $GITHUB_ENV
+          PATCH=$(echo "$VERSION" | cut -d . -f 3)
+          PATCH=$((PATCH + 1))
+          DATETIME=$(date +%Y%m%d.%H%M%S)
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH-pre.$DATETIME"
+          echo "version=$NEW_VERSION"  >> $GITHUB_ENV
           echo "version_major=$MAJOR" >> $GITHUB_ENV
           echo "version_minor=$MINOR" >> $GITHUB_ENV
+          echo "version_patch=$PATCH" >> $GITHUB_ENV
+
+      - name: Tag pre-release commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${{ env.version }}
+          git push origin v${{ env.version }}
+
+      - name: Create GitHub pre-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.version }}
+          prerelease: true
 
       - name: Build and Push Docker Image
         run: |
