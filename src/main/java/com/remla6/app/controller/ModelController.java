@@ -50,7 +50,7 @@ public class ModelController {
         // Process and persist inference
         try {
             modelService.processSentiment(review);
-        } catch (InferenceFailedException ex) {
+        } catch (Exception ex) {
             // We need to stop the timer and then rethrow because spring handles it in the end.
             metrics.recordInferenceFailure();
             metrics.stopInferenceTimer(sample);
