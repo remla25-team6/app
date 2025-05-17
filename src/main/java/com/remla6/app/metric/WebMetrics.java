@@ -21,7 +21,7 @@ public class WebMetrics {
     private Gauge storedResponsesGauge;
     private Timer inferenceLatency;
 
-    public WebMetrics(MeterRegistry registry) {
+    public WebMetrics(MeterRegistry registry) { // If IDE complains abt non-existent bean it can be ignored.
         this.registry = registry;
     }
 
