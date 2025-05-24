@@ -1,8 +1,10 @@
 package com.remla6.app.controller;
 
 import com.remla6.app.exception.InferenceFailedException;
+import com.remla6.app.metric.WebMetrics;
 import com.remla6.app.model.SentimentModel;
 import com.remla6.app.service.ModelService;
+import io.micrometer.core.instrument.Timer;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,6 +21,7 @@ import java.util.List;
 @RequestMapping("/")
 public class ModelController {
     private final ModelService modelService;
+    private final WebMetrics metrics;
 
     /**
      * REST endpoint serving GET /
@@ -41,11 +44,24 @@ public class ModelController {
      */
     @PostMapping
     public String postReview(@RequestParam("review") String review, Model model) throws InferenceFailedException {
+        // Inference metric start timer:
+        Timer.Sample sample = metrics.startInferenceTimer();
+
         // Process and persist inference
-        modelService.processSentiment(review);
+        try {
+            modelService.processSentiment(review);
+        } catch (Exception ex) {
+            // We need to stop the timer and then rethrow because spring handles it in the end.
+            metrics.recordInferenceFailure();
+            metrics.stopInferenceTimer(sample);
+            throw ex;
+        }
+
+        metrics.stopInferenceTimer(sample);
 
         // Retrieve all previous inferences.
         List<SentimentModel> responses = modelService.getAllPreviousResults();
+        metrics.updateStoredResponsesCount(responses.size());
 
         // MVC
         model.addAttribute("responses", responses);
