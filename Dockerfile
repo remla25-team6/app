@@ -4,7 +4,7 @@ WORKDIR /app
 COPY target/*.jar app.jar
 
 # Slimmer runtime environment
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-alpine-3.21
 WORKDIR /app
 COPY --from=jar-copier /app/app.jar .
 EXPOSE 8080
