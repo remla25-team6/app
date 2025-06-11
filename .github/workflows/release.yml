@@ -49,7 +49,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_ENV
           echo "version_major=$MAJOR" >> $GITHUB_ENV
           echo "version_minor=$MINOR" >> $GITHUB_ENV
-          
+
       # Docker buildx setup   
       - name: Set up QEMU emulation
         uses: docker/setup-qemu-action@v2
@@ -69,7 +69,7 @@ jobs:
             --tag $IMG:latest \
             --push \
             .
-            
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
