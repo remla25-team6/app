@@ -48,8 +48,14 @@ public class ModelController {
         Timer.Sample sample = metrics.startInferenceTimer();
 
         // Process and persist inference
+        SentimentModel hit;
         try {
-            modelService.processSentiment(review);
+            // Check if already present
+            if ((hit = modelService.findByInput(review)) != null) {
+                metrics.recordCacheHit();
+            } else {
+                hit = modelService.processSentiment(review);
+            }
         } catch (Exception ex) {
             // We need to stop the timer and then rethrow because spring handles it in the end.
             metrics.recordInferenceFailure();
@@ -61,6 +67,8 @@ public class ModelController {
 
         // Retrieve all previous inferences.
         List<SentimentModel> responses = modelService.getAllPreviousResults();
+        responses.remove(hit);
+        responses.add(0, hit);
         metrics.updateStoredResponsesCount(responses.size());
 
         // MVC

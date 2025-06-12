@@ -20,6 +20,7 @@ public class WebMetrics {
     private AtomicInteger storedResponses;
     private Gauge storedResponsesGauge;
     private Timer inferenceLatency;
+    private Counter cacheHits;
 
     public WebMetrics(MeterRegistry registry) { // If IDE complains abt non-existent bean it can be ignored.
         this.registry = registry;
@@ -48,6 +49,11 @@ public class WebMetrics {
                 .publishPercentileHistogram()
                 .tags("application", "app")
                 .register(registry);
+
+        cacheHits = Counter.builder("app_cache_hits_total")
+                .description("Total number of sentiment inferences served from cache")
+                .tags("application", "app")
+                .register(registry);
     }
 
     // Called at the start of inference
@@ -59,6 +65,11 @@ public class WebMetrics {
     // Called after inference completes (success or failure)
     public void stopInferenceTimer(Timer.Sample sample) {
         sample.stop(inferenceLatency);
+    }
+
+    // Increment cache hit counter
+    public void recordCacheHit() {
+        cacheHits.increment();
     }
 
     // On a caught exception during inference

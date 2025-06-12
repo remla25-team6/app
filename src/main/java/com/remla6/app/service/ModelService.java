@@ -59,6 +59,11 @@ public class ModelService {
         return sentimentRepository.save(model);
     }
 
+    public SentimentModel findByInput(String input) {
+        var res = sentimentRepository.findByInputString(input);
+        return res.orElse(null);
+    }
+
     /**
      * Method to retrieve all inference results from the persistence repository.
      * @return List of SentinentModel
