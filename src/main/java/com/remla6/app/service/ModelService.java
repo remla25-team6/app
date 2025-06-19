@@ -49,7 +49,7 @@ public class ModelService {
                 .toEntity(PredictResponse.class);
 
         // Check if response = 200
-        if (response.getStatusCode() != HttpStatus.OK) {
+        if (response.getBody() == null || response.getStatusCode() != HttpStatus.OK) {
             throw new InferenceFailedException("Model currently unavailable, try again later.");
         }
 
