@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -19,7 +22,13 @@ public class WebMetrics {
     private Counter inferenceFailures;
     private AtomicInteger storedResponses;
     private Gauge storedResponsesGauge;
-    private Timer inferenceLatency;
+    private Gauge storedResponsesGaugePos;
+    private Gauge storedResponsesGaugeNeg;
+
+
+    // // For labeled metrics
+    private final Map<String, AtomicInteger> storedResponsesBySentiment = new ConcurrentHashMap<>();
+    private final Map<String, Timer> latencyTimers = new ConcurrentHashMap<>();
 
     public WebMetrics(MeterRegistry registry) { // If IDE complains abt non-existent bean it can be ignored.
         this.registry = registry;
@@ -43,11 +52,28 @@ public class WebMetrics {
                 .tags("application", "app")
                 .register(registry);
 
-        inferenceLatency = Timer.builder("app_inference_latency_seconds")
-                .description("Distribution of sentiment inference latency")
-                .publishPercentileHistogram()
-                .tags("application", "app")
+        // Stored response labels by sentiment (positive/negative)
+        storedResponsesGaugePos = Gauge.builder("app_stored_responses_by_sentiment_current",
+                      storedResponsesBySentiment.computeIfAbsent("pos", k -> new AtomicInteger(0)),
+                      AtomicInteger::get)
+                .description("Current number of stored responses, by sentiment")
+                .tag("sentiment", "pos")
                 .register(registry);
+
+        storedResponsesGaugeNeg = Gauge.builder("app_stored_responses_by_sentiment_current",
+                      storedResponsesBySentiment.computeIfAbsent("neg", k -> new AtomicInteger(0)),
+                      AtomicInteger::get)
+                .description("Current number of stored responses, by sentiment")
+                .tag("sentiment", "neg")
+                .register(registry);
+    }
+    
+    public void recordSuccessfulInference(String sentiment) {
+        Counter.builder("app_inference_success_total")
+                .description("Total number of successful inferences, labeled by sentiment.")
+                .tag("sentiment", sentiment)
+                .register(registry)
+                .increment();
     }
 
     // Called at the start of inference
@@ -57,8 +83,15 @@ public class WebMetrics {
     }
 
     // Called after inference completes (success or failure)
-    public void stopInferenceTimer(Timer.Sample sample) {
-        sample.stop(inferenceLatency);
+    public void stopInferenceTimer(Timer.Sample sample, String outcome) {
+        Timer timer = latencyTimers.computeIfAbsent(outcome, o ->
+                Timer.builder("app_inference_latency_seconds")
+                        .description("Distribution of sentiment inference latency")
+                        .publishPercentileHistogram()
+                        .tag("outcome", o) // The label for this timer
+                        .register(registry)
+        );
+        sample.stop(timer);
     }
 
     // On a caught exception during inference
@@ -69,5 +102,10 @@ public class WebMetrics {
     // After you load all responses, update the gauge
     public void updateStoredResponsesCount(int count) {
         storedResponses.set(count);
+    }
+    // Store/update sentiment counter
+    public void updateStoredResponsesBySentiment(long positiveCount, long negativeCount) {
+    storedResponsesBySentiment.get("pos").set((int) positiveCount);
+    storedResponsesBySentiment.get("neg").set((int) negativeCount);
     }
 }

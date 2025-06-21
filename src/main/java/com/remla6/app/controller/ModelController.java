@@ -31,6 +31,11 @@ public class ModelController {
      */
     @GetMapping
     public String index(Model model) {
+        List<SentimentModel> responses = modelService.getAllPreviousResults();
+        metrics.updateStoredResponsesCount(responses.size());
+        updateSentimentGauges(responses); // Update sentiment labeled gauges
+
+        model.addAttribute("responses", responses);
         model.addAttribute("version", VersionUtil.getVersion());
         return "index";
     }
@@ -46,27 +51,39 @@ public class ModelController {
     public String postReview(@RequestParam("review") String review, Model model) throws InferenceFailedException {
         // Inference metric start timer:
         Timer.Sample sample = metrics.startInferenceTimer();
+        SentimentModel sentiment;
 
         // Process and persist inference
         try {
-            modelService.processSentiment(review);
+            sentiment = modelService.processSentiment(review);
+            metrics.recordSuccessfulInference(sentiment.getSentiment());
+            metrics.stopInferenceTimer(sample, sentiment.getSentiment());
         } catch (Exception ex) {
             // We need to stop the timer and then rethrow because spring handles it in the end.
             metrics.recordInferenceFailure();
-            metrics.stopInferenceTimer(sample);
+            metrics.stopInferenceTimer(sample, "failed"); // Return failed outcome when inference fails
             throw ex;
         }
-
-        metrics.stopInferenceTimer(sample);
+        
 
         // Retrieve all previous inferences.
         List<SentimentModel> responses = modelService.getAllPreviousResults();
         metrics.updateStoredResponsesCount(responses.size());
+        updateSentimentGauges(responses);
 
         // MVC
         model.addAttribute("responses", responses);
         model.addAttribute("version", VersionUtil.getVersion());
+
         return "index";
+    }
+
+
+     // Helper method to count sentiments and update the labeled gauges.
+    private void updateSentimentGauges(List<SentimentModel> responses) {
+        long positiveCount = responses.stream().filter(r -> "pos".equals(r.getSentiment())).count();
+        long negativeCount = responses.stream().filter(r -> "neg".equals(r.getSentiment())).count();
+        metrics.updateStoredResponsesBySentiment(positiveCount, negativeCount);
     }
 
 }
