@@ -5,9 +5,11 @@ import com.remla6.app.dto.PredictResponse;
 import com.remla6.app.exception.InferenceFailedException;
 import com.remla6.app.model.SentimentModel;
 import com.remla6.app.repository.SentimentRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -47,7 +49,7 @@ public class ModelService {
                 .toEntity(PredictResponse.class);
 
         // Check if response = 200
-        if (response.getBody() == null) {
+        if (response.getBody() == null || response.getStatusCode() != HttpStatus.OK) {
             throw new InferenceFailedException("Model currently unavailable, try again later.");
         }
 
@@ -59,6 +61,9 @@ public class ModelService {
         return sentimentRepository.save(model);
     }
 
+    public SentimentModel findById(Long id){
+        return sentimentRepository.findById(id).orElse(null);
+    }
     /**
      * Method to retrieve all inference results from the persistence repository.
      * @return List of SentinentModel
