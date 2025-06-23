@@ -12,6 +12,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class WebMetrics {
@@ -24,7 +25,8 @@ public class WebMetrics {
     private Gauge storedResponsesGauge;
     private Gauge storedResponsesGaugePos;
     private Gauge storedResponsesGaugeNeg;
-
+    private AtomicLong totalTextLength;
+    private Gauge averageTextLengthGauge;
 
     // // For labeled metrics
     private final Map<String, AtomicInteger> storedResponsesBySentiment = new ConcurrentHashMap<>();
@@ -32,6 +34,7 @@ public class WebMetrics {
 
     public WebMetrics(MeterRegistry registry) { // If IDE complains abt non-existent bean it can be ignored.
         this.registry = registry;
+        this.totalTextLength = new AtomicLong(0);
     }
 
     @PostConstruct
@@ -65,6 +68,14 @@ public class WebMetrics {
                       AtomicInteger::get)
                 .description("Current number of stored responses, by sentiment")
                 .tag("sentiment", "neg")
+                .register(registry);
+
+        // Average text length gauge
+        averageTextLengthGauge = Gauge.builder("app_average_text_length", 
+                this,
+                this::calculateAverageTextLength)
+                .description("Average length of processed text inputs")
+                .tags("application", "app")
                 .register(registry);
     }
     
@@ -107,5 +118,17 @@ public class WebMetrics {
     public void updateStoredResponsesBySentiment(long positiveCount, long negativeCount) {
     storedResponsesBySentiment.get("pos").set((int) positiveCount);
     storedResponsesBySentiment.get("neg").set((int) negativeCount);
+    }
+
+    private double calculateAverageTextLength() {
+        int count = storedResponses.get();
+        return count > 0 ? (double) totalTextLength.get() / count : 0.0;
+    }
+
+    // Method to update text length metrics when new text is processed
+    public void updateTextLengthMetrics(String text) {
+        if (text != null) {
+            totalTextLength.addAndGet(text.length());
+        }
     }
 }
