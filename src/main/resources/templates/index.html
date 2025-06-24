@@ -35,8 +35,14 @@
             margin-top: 20px;
             text-align: center;
         }
-        /* Spacer to ensure space for error message at bottom */
-        .error-spacer {
+        /* Success text styling */
+        .success-text {
+            color: green;
+            margin-top: 20px;
+            text-align: center;
+        }
+        /* Spacer to ensure space for messages at bottom */
+        .message-spacer {
             height: 3em;
         }
     </style>
@@ -81,10 +87,13 @@
 <!-- 3) Version display -->
 <div class="version" th:text="'Version: ' + ${version}">Version: 1.0.0</div>
 
-<!-- Spacer for error message -->
-<div class="error-spacer"></div>
+<!-- Spacer for messages -->
+<div class="message-spacer"></div>
 
-<!-- Optional error message -->
+<!-- Success message -->
+<div th:if="${successMessage}" class="success-text" th:text="${successMessage}">Success message here</div>
+
+<!-- Error message -->
 <div th:if="${errorMessage}" class="error-text" th:text="${errorMessage}">Error message here</div>
 
 </body>
