@@ -124,6 +124,9 @@ public class ModelController {
         Timer.Sample sample = metrics.startInferenceTimer();
         SentimentModel sentiment;
 
+        // Update text length metrics
+        metrics.updateTextLengthMetrics(review);
+
         // Process and persist inference
         try {
             sentiment = modelService.processSentiment(review);
