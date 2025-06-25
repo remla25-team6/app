@@ -73,7 +73,7 @@ public class WebMetrics {
         // Average text length gauge
         averageTextLengthGauge = Gauge.builder("app_average_text_length", 
                 this,
-                ignored -> this.calculateAverageTextLength())
+                wm -> wm.calculateAverageTextLength())
                 .description("Average length of processed text inputs")
                 .tags("application", "app")
                 .register(registry);
