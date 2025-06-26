@@ -4,6 +4,26 @@
 
 A simple Spring Boot MVC application that analyzes user-submitted reviews for sentiment (positive/negative), persists results, and allows users to provide feedback for retraining.
 
+## API & Frontend Overview
+
+| **Path**               | **Method** | **Description**                                                                   |
+| ---------------------- | ---------- | --------------------------------------------------------------------------------- |
+| `/`                    | `GET`      | Renders the homepage with a review form, version info, and past inferences.       |
+| `/`                    | `POST`     | Submits a review for sentiment inference. Result is stored and shown on page.     |
+| `/train`               | `POST`     | Submits corrections (disagreed predictions). Flips sentiment and stores feedback. |
+| `/train`               | `GET`      | Returns all user feedback entries as JSON for retraining or inspection.           |
+| `/actuator/prometheus` | `GET`      | Exposes Prometheus-formatted metrics via Micrometer for observability.            |
+
+### Feature Summary
+
+| **Feature**         | **Details**                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------- |
+| Review Submission   | Users enter a review via a form. It is sent to the model API (`/predict` via `MODEL_URL`) and classified. |
+| Result Display      | All prior predictions are shown on the homepage, along with version info and a feedback checkbox.         |
+| Feedback Submission | Users can select incorrect predictions and submit feedback. The system stores flipped sentiments.         |
+| Feedback API        | Accessible at `/train` (`GET`) as JSON. Useful for training data collection.                              |
+| Metrics             | Inference time, failure counts, and stored review counts are tracked and exposed via Prometheus.          |
+
 ## Getting Started
 
 ### Prerequisites
@@ -46,3 +66,34 @@ A simple Spring Boot MVC application that analyzes user-submitted reviews for se
     ```bash
     mvn clean package
     ```
+
+## Monitoring
+Micrometer metrics are available at `/actuator/prometheus` and can be scraped by Prometheus. Custom metrics are configured via `WebMetrics.java` and `MetricsConfig.java`.
+
+##  CI/CD
+This project uses GitHub Actions to automate testing and versioned releases.
+
+### CI
+Every commit and pull request triggers the `cicd.yml` workflow, which:
+- Builds the application using Maven
+- Runs unit tests
+- Verifies build and integration success
+
+### Release
+To publish an official release:
+1. Ensure all changes are committed and pushed to a release-ready branch.
+2. Tag the commit with a semantic version like `v0.1.0` and push:
+  ```bash
+  git tag v0.1.0
+  git push origin v0.1.0
+  ```
+3. This triggers the release.yml workflow, which:
+  - Builds the application
+  - Publishes a GitHub Release with the JAR file attached
+
+### Pre-release
+To publish a pre-release:
+1. Push a commit to the `main` branch (e.g. through a pull request to `main`).
+2. The `prerelease.yml` workflow runs automatically on each commit to main:
+  - Builds and packages the app
+  - Publishes a pre-release on GitHub with a timestamped version (e.g., `v0.1.0-pre.20250625.185600`)
