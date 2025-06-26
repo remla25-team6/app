@@ -31,7 +31,6 @@ A simple Spring Boot MVC application that analyzes user-submitted reviews for se
 - Java 17+
 - Maven 3.6+
 - A running sentiment model REST endpoint at `/predict`
-- GitHub-hosted dependency: `lib-version`s (via GitHub Packages)
 
 ### Installation
 #### With Docker
